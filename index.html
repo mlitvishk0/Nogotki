@@ -329,7 +329,7 @@
     </div>
 
     <!-- Форма отправляется через Formspree: замените YOUR_FORM_ID на ID из вашего аккаунта formspree.io -->
-    <form class="form-grid" action="https://formspree.io/f/mqpzwwoq" method="POST">
+    <form class="form-grid" id="bookingForm" action="https://formspree.io/f/mqpzwwoq" method="POST">
       <div class="form-field">
         <label for="name">Имя</label>
         <input type="text" id="name" name="Имя" placeholder="Как к вам обращаться" required>
@@ -357,8 +357,9 @@
         <textarea id="comment" name="Комментарий" placeholder="Необязательно"></textarea>
       </div>
       <div class="form-field full form-submit">
-        <button type="submit" class="btn btn-primary" style="align-self:flex-start;">Отправить заявку</button>
+        <button type="submit" class="btn btn-primary" id="bookingSubmitBtn" style="align-self:flex-start;">Отправить заявку</button>
         <p class="form-note">Отправляя форму, вы соглашаетесь на обработку персональных данных.</p>
+        <p class="form-note" id="bookingStatus" style="display:none;margin-top:10px;font-weight:600;"></p>
       </div>
     </form>
   </div>
@@ -372,6 +373,13 @@
 </footer>
 
 <script>
+  // При обновлении страницы всегда возвращаемся наверх (к заголовку),
+  // а не остаёмся на месте прошлого скролла / якоря из URL
+  if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+  }
+  window.addEventListener('load', () => window.scrollTo(0, 0));
+
   // Табы прайса
   document.querySelectorAll('.price-tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -393,6 +401,41 @@
         item.classList.toggle('show', match);
       });
     });
+  });
+
+  // Отправка формы записи без ухода со страницы (fetch вместо обычной навигации)
+  const bookingForm = document.getElementById('bookingForm');
+  const bookingStatus = document.getElementById('bookingStatus');
+  const bookingBtn = document.getElementById('bookingSubmitBtn');
+
+  bookingForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    bookingBtn.disabled = true;
+    bookingBtn.textContent = 'Отправка...';
+
+    try {
+      const response = await fetch(bookingForm.action, {
+        method: 'POST',
+        body: new FormData(bookingForm),
+        headers: { 'Accept': 'application/json' }
+      });
+
+      if (response.ok) {
+        bookingStatus.textContent = 'Спасибо! Заявка отправлена, мы свяжемся с вами в течение дня.';
+        bookingStatus.style.color = '#8FBF8A';
+        bookingStatus.style.display = 'block';
+        bookingForm.reset();
+      } else {
+        throw new Error('Ошибка отправки');
+      }
+    } catch (err) {
+      bookingStatus.textContent = 'Не удалось отправить заявку. Попробуйте ещё раз или позвоните нам напрямую.';
+      bookingStatus.style.color = '#E29999';
+      bookingStatus.style.display = 'block';
+    } finally {
+      bookingBtn.disabled = false;
+      bookingBtn.textContent = 'Отправить заявку';
+    }
   });
 </script>
 
